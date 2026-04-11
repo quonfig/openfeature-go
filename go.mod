@@ -1,6 +1,6 @@
 module github.com/quonfig/openfeature-go
 
-go 1.25.0
+go 1.23
 
 replace github.com/quonfig/sdk-go => ../sdk-go
 
