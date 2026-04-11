@@ -1,0 +1,15 @@
+# Go binaries and test artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Dependency directories
+vendor/
+
+# Go workspace files (managed at monorepo root)
+go.work
+go.work.sum
