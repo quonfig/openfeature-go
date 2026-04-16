@@ -1,12 +1,10 @@
 module github.com/quonfig/openfeature-go
 
-go 1.23
-
-replace github.com/quonfig/sdk-go => ../sdk-go
+go 1.25.0
 
 require (
 	github.com/open-feature/go-sdk v1.17.2
-	github.com/quonfig/sdk-go v0.0.0-00010101000000-000000000000
+	github.com/quonfig/sdk-go v0.0.4
 	github.com/stretchr/testify v1.11.1
 )
 
