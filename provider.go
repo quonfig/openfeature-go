@@ -14,6 +14,7 @@ package openfeaturego
 
 import (
 	"context"
+	"encoding/json"
 	"sync"
 
 	"github.com/open-feature/go-sdk/openfeature"
@@ -133,7 +134,7 @@ func (p *QuonfigProvider) BooleanEvaluation(
 	}
 
 	qCtx := MapContext(flatCtx, p.opts.TargetingKeyMapping)
-	val, found, err := client.GetBoolValue(flag, qCtx)
+	rawVal, evalReason, found, err := client.EvaluateKey(flag, qCtx)
 	if err != nil || !found {
 		resErr := toResolutionError(err, found)
 		reason := defaultOrErrorReason(err, found)
@@ -146,9 +147,9 @@ func (p *QuonfigProvider) BooleanEvaluation(
 		}
 	}
 	return openfeature.BoolResolutionDetail{
-		Value: val,
+		Value: rawVal.BoolValue(),
 		ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-			Reason: openfeature.StaticReason,
+			Reason: evalReasonToOF(evalReason),
 		},
 	}
 }
@@ -172,7 +173,7 @@ func (p *QuonfigProvider) StringEvaluation(
 	}
 
 	qCtx := MapContext(flatCtx, p.opts.TargetingKeyMapping)
-	val, found, err := client.GetStringValue(flag, qCtx)
+	rawVal, evalReason, found, err := client.EvaluateKey(flag, qCtx)
 	if err != nil || !found {
 		resErr := toResolutionError(err, found)
 		reason := defaultOrErrorReason(err, found)
@@ -185,9 +186,9 @@ func (p *QuonfigProvider) StringEvaluation(
 		}
 	}
 	return openfeature.StringResolutionDetail{
-		Value: val,
+		Value: rawVal.StringValue(),
 		ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-			Reason: openfeature.StaticReason,
+			Reason: evalReasonToOF(evalReason),
 		},
 	}
 }
@@ -211,7 +212,7 @@ func (p *QuonfigProvider) FloatEvaluation(
 	}
 
 	qCtx := MapContext(flatCtx, p.opts.TargetingKeyMapping)
-	val, found, err := client.GetFloatValue(flag, qCtx)
+	rawVal, evalReason, found, err := client.EvaluateKey(flag, qCtx)
 	if err != nil || !found {
 		resErr := toResolutionError(err, found)
 		reason := defaultOrErrorReason(err, found)
@@ -224,9 +225,9 @@ func (p *QuonfigProvider) FloatEvaluation(
 		}
 	}
 	return openfeature.FloatResolutionDetail{
-		Value: val,
+		Value: rawVal.DoubleValue(),
 		ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-			Reason: openfeature.StaticReason,
+			Reason: evalReasonToOF(evalReason),
 		},
 	}
 }
@@ -250,7 +251,7 @@ func (p *QuonfigProvider) IntEvaluation(
 	}
 
 	qCtx := MapContext(flatCtx, p.opts.TargetingKeyMapping)
-	val, found, err := client.GetIntValue(flag, qCtx)
+	rawVal, evalReason, found, err := client.EvaluateKey(flag, qCtx)
 	if err != nil || !found {
 		resErr := toResolutionError(err, found)
 		reason := defaultOrErrorReason(err, found)
@@ -263,9 +264,9 @@ func (p *QuonfigProvider) IntEvaluation(
 		}
 	}
 	return openfeature.IntResolutionDetail{
-		Value: val,
+		Value: rawVal.IntValue(),
 		ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-			Reason: openfeature.StaticReason,
+			Reason: evalReasonToOF(evalReason),
 		},
 	}
 }
@@ -291,10 +292,24 @@ func (p *QuonfigProvider) ObjectEvaluation(
 
 	qCtx := MapContext(flatCtx, p.opts.TargetingKeyMapping)
 
+	// Resolve the raw value once to get the reason.
+	rawVal, evalReason, found, err := client.EvaluateKey(flag, qCtx)
+	if err != nil || !found {
+		resErr := toResolutionError(err, found)
+		reason := defaultOrErrorReason(err, found)
+		return openfeature.InterfaceResolutionDetail{
+			Value: defaultValue,
+			ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
+				ResolutionError: resErr,
+				Reason:          reason,
+			},
+		}
+	}
+
+	ofReason := evalReasonToOF(evalReason)
+
 	// Try string_list first.
-	listVal, found, err := client.GetStringSliceValue(flag, qCtx)
-	if err == nil && found {
-		// Convert []string to []any for OpenFeature compatibility.
+	if listVal := rawVal.StringListValue(); listVal != nil {
 		result := make([]any, len(listVal))
 		for i, s := range listVal {
 			result[i] = s
@@ -302,30 +317,30 @@ func (p *QuonfigProvider) ObjectEvaluation(
 		return openfeature.InterfaceResolutionDetail{
 			Value: result,
 			ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-				Reason: openfeature.StaticReason,
+				Reason: ofReason,
 			},
 		}
 	}
 
 	// Try JSON.
-	jsonVal, found, err := client.GetJSONValue(flag, qCtx)
-	if err == nil && found {
-		return openfeature.InterfaceResolutionDetail{
-			Value: jsonVal,
-			ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-				Reason: openfeature.StaticReason,
-			},
+	s := rawVal.StringValue()
+	if s != "" {
+		var jsonVal interface{}
+		if jsonErr := json.Unmarshal([]byte(s), &jsonVal); jsonErr == nil {
+			return openfeature.InterfaceResolutionDetail{
+				Value: jsonVal,
+				ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
+					Reason: ofReason,
+				},
+			}
 		}
 	}
 
-	// Not found or error — use default.
-	resErr := toResolutionError(err, found)
-	reason := defaultOrErrorReason(err, found)
+	// Return the raw string value as a fallback.
 	return openfeature.InterfaceResolutionDetail{
-		Value: defaultValue,
+		Value: rawVal.StringValue(),
 		ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-			ResolutionError: resErr,
-			Reason:          reason,
+			Reason: ofReason,
 		},
 	}
 }
@@ -374,6 +389,20 @@ func (p *QuonfigProvider) buildQuonfigOptions() []quonfig.Option {
 
 	opts = append(opts, p.opts.AdditionalOptions...)
 	return opts
+}
+
+// evalReasonToOF maps a Quonfig EvalReason to an OpenFeature Reason string.
+func evalReasonToOF(r quonfig.EvalReason) openfeature.Reason {
+	switch r {
+	case quonfig.ReasonStatic:
+		return openfeature.StaticReason
+	case quonfig.ReasonTargetingMatch:
+		return openfeature.TargetingMatchReason
+	case quonfig.ReasonSplit:
+		return openfeature.SplitReason
+	default:
+		return openfeature.UnknownReason
+	}
 }
 
 // defaultOrErrorReason returns DefaultReason when the flag was simply not found,

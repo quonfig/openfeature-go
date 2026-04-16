@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	openfeaturego "github.com/quonfig/openfeature-go"
+	quonfig "github.com/quonfig/sdk-go"
 )
 
 // integrationTestDataDir returns the absolute path to the integration-test-data fixtures.
@@ -145,6 +146,9 @@ func newDataDirProvider(t *testing.T) *openfeaturego.QuonfigProvider {
 	provider := openfeaturego.NewQuonfigProvider(openfeaturego.Options{
 		DataDir:     dataDir,
 		Environment: "Production",
+		AdditionalOptions: []quonfig.Option{
+			quonfig.WithAllTelemetryDisabled(),
+		},
 	})
 	err := provider.Init(openfeature.EvaluationContext{})
 	require.NoError(t, err)
@@ -297,4 +301,67 @@ func TestIntegration_GetClient(t *testing.T) {
 	require.NotNil(t, client)
 	keys := client.Keys()
 	assert.Greater(t, len(keys), 0, "expected at least one key from native client")
+}
+
+// --- Reason field integration tests ---
+
+func TestIntegration_StaticReason_NoTargetingRules(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+	provider := newDataDirProvider(t)
+	bg := context.Background()
+
+	// brand.new.string has no targeting rules -> STATIC
+	detail := provider.StringEvaluation(bg, "brand.new.string", "default", nil)
+	assert.NoError(t, detail.Error())
+	assert.Equal(t, "hello.world", detail.Value)
+	assert.Equal(t, openfeature.StaticReason, detail.Reason)
+}
+
+func TestIntegration_TargetingMatchReason_RuleMatches(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+	provider := newDataDirProvider(t)
+	bg := context.Background()
+
+	// of.targeting: returns true when user.plan is "pro" (TARGETING_MATCH)
+	detail := provider.BooleanEvaluation(bg, "of.targeting", false, openfeature.FlattenedContext{
+		"user.plan": "pro",
+	})
+	assert.NoError(t, detail.Error())
+	assert.True(t, detail.Value)
+	assert.Equal(t, openfeature.TargetingMatchReason, detail.Reason)
+}
+
+func TestIntegration_TargetingMatchReason_Fallthrough(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+	provider := newDataDirProvider(t)
+	bg := context.Background()
+
+	// of.targeting without user.plan="pro" -> falls through to ALWAYS_TRUE rule (TARGETING_MATCH)
+	detail := provider.BooleanEvaluation(bg, "of.targeting", true, nil)
+	assert.NoError(t, detail.Error())
+	assert.False(t, detail.Value)
+	assert.Equal(t, openfeature.TargetingMatchReason, detail.Reason)
+}
+
+func TestIntegration_SplitReason_WeightedValue(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+	provider := newDataDirProvider(t)
+	bg := context.Background()
+
+	// of.weighted uses a weighted_values rule -> SPLIT
+	// The targetingKey maps to user.id by default for bucketing
+	detail := provider.StringEvaluation(bg, "of.weighted", "default", openfeature.FlattenedContext{
+		"targetingKey": "92a202f2",
+	})
+	assert.NoError(t, detail.Error())
+	assert.NotEqual(t, "default", detail.Value)
+	assert.Equal(t, openfeature.SplitReason, detail.Reason)
 }
