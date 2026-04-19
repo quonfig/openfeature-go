@@ -3,14 +3,32 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_call:
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout openfeature-go
+        uses: actions/checkout@v4
+        with:
+          path: openfeature-go
+
+      - name: Checkout integration-test-data
+        uses: actions/checkout@v4
+        with:
+          repository: quonfig/integration-test-data
+          path: integration-test-data
+          ref: main
+
       - uses: actions/setup-go@v5
         with:
           go-version: "1.25"
-          cache: true
-      - run: go vet ./...
-      - run: go test -v -race -short ./...
+          cache-dependency-path: openfeature-go/go.sum
+
+      - name: Vet
+        working-directory: openfeature-go
+        run: go vet ./...
+
+      - name: Test
+        working-directory: openfeature-go
+        run: go test -v -race ./...
