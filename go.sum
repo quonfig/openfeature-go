@@ -6,8 +6,8 @@ github.com/open-feature/go-sdk v1.17.2 h1:pTdeNks/hgnPrlqdgtFwltnIron1oOxqg4FmLl
 github.com/open-feature/go-sdk v1.17.2/go.mod h1:kTMCquVtck18XdSCI6rBoNFEBLvkOy4Tphu2pV8bq34=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/quonfig/sdk-go v0.0.6 h1:2xOTphdeniliBapolI6vADt3Yj7z9BNe8Yqq+bGSu20=
-github.com/quonfig/sdk-go v0.0.6/go.mod h1:uIC0xrjfFtzLeND8mK9bLuyMrCLzRmxEy0hFIqxX0Lo=
+github.com/quonfig/sdk-go v0.0.13 h1:2iYE+Jf7mafLPgOaJMv5T5iTRvDdqkJiMwIBL1BEN4c=
+github.com/quonfig/sdk-go v0.0.13/go.mod h1:uIC0xrjfFtzLeND8mK9bLuyMrCLzRmxEy0hFIqxX0Lo=
 github.com/spaolacci/murmur3 v1.1.0 h1:7c1g84S4BPRrfL5Xrdp6fOJ206sU9y293DDHaoy0bLI=
 github.com/spaolacci/murmur3 v1.1.0/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
