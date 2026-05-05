@@ -46,11 +46,11 @@ type Options struct {
 // QuonfigProvider implements the OpenFeature FeatureProvider and StateHandler interfaces.
 // It wraps the github.com/quonfig/sdk-go native client.
 type QuonfigProvider struct {
-	opts        Options
-	client      *quonfig.Client
-	mu          sync.RWMutex
-	ready       bool // set to true after Init() completes successfully
-	eventCh     chan openfeature.Event
+	opts    Options
+	client  *quonfig.Client
+	mu      sync.RWMutex
+	ready   bool // set to true after Init() completes successfully
+	eventCh chan openfeature.Event
 }
 
 // NewQuonfigProvider constructs a new QuonfigProvider. Call openfeature.SetProviderAndWait
