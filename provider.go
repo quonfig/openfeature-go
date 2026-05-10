@@ -115,6 +115,33 @@ func (p *QuonfigProvider) Shutdown() {
 	}
 }
 
+// notReadyDetail returns the standard ProviderResolutionDetail used when the
+// provider is invoked before Init has finished.
+func notReadyDetail() openfeature.ProviderResolutionDetail {
+	return openfeature.ProviderResolutionDetail{
+		ResolutionError: openfeature.NewProviderNotReadyResolutionError("provider not initialized"),
+		Reason:          openfeature.ErrorReason,
+		Variant:         "default",
+		FlagMetadata:    openfeature.FlagMetadata{},
+	}
+}
+
+// buildResolutionDetail copies Variant and FlagMetadata from the SDK-side
+// EvaluationDetails into an OpenFeature ProviderResolutionDetail. Caller fills
+// in the actual coerced Value separately.
+func buildResolutionDetail(details quonfig.EvaluationDetails) openfeature.ProviderResolutionDetail {
+	md := openfeature.FlagMetadata{}
+	for k, v := range details.FlagMetadata {
+		md[k] = v
+	}
+	return openfeature.ProviderResolutionDetail{
+		ResolutionError: resolutionErrorFor(details),
+		Reason:          reasonFor(details),
+		Variant:         details.Variant,
+		FlagMetadata:    md,
+	}
+}
+
 // BooleanEvaluation resolves a boolean flag.
 func (p *QuonfigProvider) BooleanEvaluation(
 	_ context.Context,
@@ -124,34 +151,16 @@ func (p *QuonfigProvider) BooleanEvaluation(
 ) openfeature.BoolResolutionDetail {
 	client := p.getClient()
 	if client == nil {
-		return openfeature.BoolResolutionDetail{
-			Value: defaultValue,
-			ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-				ResolutionError: openfeature.NewProviderNotReadyResolutionError("provider not initialized"),
-				Reason:          openfeature.ErrorReason,
-			},
-		}
+		return openfeature.BoolResolutionDetail{Value: defaultValue, ProviderResolutionDetail: notReadyDetail()}
 	}
 
 	qCtx := MapContext(flatCtx, p.opts.TargetingKeyMapping)
-	rawVal, evalReason, found, err := client.EvaluateKey(flag, qCtx)
-	if err != nil || !found {
-		resErr := toResolutionError(err, found)
-		reason := defaultOrErrorReason(err, found)
-		return openfeature.BoolResolutionDetail{
-			Value: defaultValue,
-			ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-				ResolutionError: resErr,
-				Reason:          reason,
-			},
-		}
+	details := client.EvaluateDetails(flag, qCtx)
+	prd := buildResolutionDetail(details)
+	if details.ErrorCode != quonfig.ErrorCodeNone || details.Value == nil {
+		return openfeature.BoolResolutionDetail{Value: defaultValue, ProviderResolutionDetail: prd}
 	}
-	return openfeature.BoolResolutionDetail{
-		Value: rawVal.BoolValue(),
-		ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-			Reason: evalReasonToOF(evalReason),
-		},
-	}
+	return openfeature.BoolResolutionDetail{Value: details.Value.BoolValue(), ProviderResolutionDetail: prd}
 }
 
 // StringEvaluation resolves a string flag.
@@ -163,34 +172,16 @@ func (p *QuonfigProvider) StringEvaluation(
 ) openfeature.StringResolutionDetail {
 	client := p.getClient()
 	if client == nil {
-		return openfeature.StringResolutionDetail{
-			Value: defaultValue,
-			ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-				ResolutionError: openfeature.NewProviderNotReadyResolutionError("provider not initialized"),
-				Reason:          openfeature.ErrorReason,
-			},
-		}
+		return openfeature.StringResolutionDetail{Value: defaultValue, ProviderResolutionDetail: notReadyDetail()}
 	}
 
 	qCtx := MapContext(flatCtx, p.opts.TargetingKeyMapping)
-	rawVal, evalReason, found, err := client.EvaluateKey(flag, qCtx)
-	if err != nil || !found {
-		resErr := toResolutionError(err, found)
-		reason := defaultOrErrorReason(err, found)
-		return openfeature.StringResolutionDetail{
-			Value: defaultValue,
-			ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-				ResolutionError: resErr,
-				Reason:          reason,
-			},
-		}
+	details := client.EvaluateDetails(flag, qCtx)
+	prd := buildResolutionDetail(details)
+	if details.ErrorCode != quonfig.ErrorCodeNone || details.Value == nil {
+		return openfeature.StringResolutionDetail{Value: defaultValue, ProviderResolutionDetail: prd}
 	}
-	return openfeature.StringResolutionDetail{
-		Value: rawVal.StringValue(),
-		ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-			Reason: evalReasonToOF(evalReason),
-		},
-	}
+	return openfeature.StringResolutionDetail{Value: details.Value.StringValue(), ProviderResolutionDetail: prd}
 }
 
 // FloatEvaluation resolves a float64 flag.
@@ -202,34 +193,16 @@ func (p *QuonfigProvider) FloatEvaluation(
 ) openfeature.FloatResolutionDetail {
 	client := p.getClient()
 	if client == nil {
-		return openfeature.FloatResolutionDetail{
-			Value: defaultValue,
-			ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-				ResolutionError: openfeature.NewProviderNotReadyResolutionError("provider not initialized"),
-				Reason:          openfeature.ErrorReason,
-			},
-		}
+		return openfeature.FloatResolutionDetail{Value: defaultValue, ProviderResolutionDetail: notReadyDetail()}
 	}
 
 	qCtx := MapContext(flatCtx, p.opts.TargetingKeyMapping)
-	rawVal, evalReason, found, err := client.EvaluateKey(flag, qCtx)
-	if err != nil || !found {
-		resErr := toResolutionError(err, found)
-		reason := defaultOrErrorReason(err, found)
-		return openfeature.FloatResolutionDetail{
-			Value: defaultValue,
-			ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-				ResolutionError: resErr,
-				Reason:          reason,
-			},
-		}
+	details := client.EvaluateDetails(flag, qCtx)
+	prd := buildResolutionDetail(details)
+	if details.ErrorCode != quonfig.ErrorCodeNone || details.Value == nil {
+		return openfeature.FloatResolutionDetail{Value: defaultValue, ProviderResolutionDetail: prd}
 	}
-	return openfeature.FloatResolutionDetail{
-		Value: rawVal.DoubleValue(),
-		ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-			Reason: evalReasonToOF(evalReason),
-		},
-	}
+	return openfeature.FloatResolutionDetail{Value: details.Value.DoubleValue(), ProviderResolutionDetail: prd}
 }
 
 // IntEvaluation resolves an int64 flag.
@@ -241,34 +214,16 @@ func (p *QuonfigProvider) IntEvaluation(
 ) openfeature.IntResolutionDetail {
 	client := p.getClient()
 	if client == nil {
-		return openfeature.IntResolutionDetail{
-			Value: defaultValue,
-			ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-				ResolutionError: openfeature.NewProviderNotReadyResolutionError("provider not initialized"),
-				Reason:          openfeature.ErrorReason,
-			},
-		}
+		return openfeature.IntResolutionDetail{Value: defaultValue, ProviderResolutionDetail: notReadyDetail()}
 	}
 
 	qCtx := MapContext(flatCtx, p.opts.TargetingKeyMapping)
-	rawVal, evalReason, found, err := client.EvaluateKey(flag, qCtx)
-	if err != nil || !found {
-		resErr := toResolutionError(err, found)
-		reason := defaultOrErrorReason(err, found)
-		return openfeature.IntResolutionDetail{
-			Value: defaultValue,
-			ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-				ResolutionError: resErr,
-				Reason:          reason,
-			},
-		}
+	details := client.EvaluateDetails(flag, qCtx)
+	prd := buildResolutionDetail(details)
+	if details.ErrorCode != quonfig.ErrorCodeNone || details.Value == nil {
+		return openfeature.IntResolutionDetail{Value: defaultValue, ProviderResolutionDetail: prd}
 	}
-	return openfeature.IntResolutionDetail{
-		Value: rawVal.IntValue(),
-		ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-			Reason: evalReasonToOF(evalReason),
-		},
-	}
+	return openfeature.IntResolutionDetail{Value: details.Value.IntValue(), ProviderResolutionDetail: prd}
 }
 
 // ObjectEvaluation resolves an object (string_list or JSON) flag.
@@ -281,32 +236,17 @@ func (p *QuonfigProvider) ObjectEvaluation(
 ) openfeature.InterfaceResolutionDetail {
 	client := p.getClient()
 	if client == nil {
-		return openfeature.InterfaceResolutionDetail{
-			Value: defaultValue,
-			ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-				ResolutionError: openfeature.NewProviderNotReadyResolutionError("provider not initialized"),
-				Reason:          openfeature.ErrorReason,
-			},
-		}
+		return openfeature.InterfaceResolutionDetail{Value: defaultValue, ProviderResolutionDetail: notReadyDetail()}
 	}
 
 	qCtx := MapContext(flatCtx, p.opts.TargetingKeyMapping)
-
-	// Resolve the raw value once to get the reason.
-	rawVal, evalReason, found, err := client.EvaluateKey(flag, qCtx)
-	if err != nil || !found {
-		resErr := toResolutionError(err, found)
-		reason := defaultOrErrorReason(err, found)
-		return openfeature.InterfaceResolutionDetail{
-			Value: defaultValue,
-			ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-				ResolutionError: resErr,
-				Reason:          reason,
-			},
-		}
+	details := client.EvaluateDetails(flag, qCtx)
+	prd := buildResolutionDetail(details)
+	if details.ErrorCode != quonfig.ErrorCodeNone || details.Value == nil {
+		return openfeature.InterfaceResolutionDetail{Value: defaultValue, ProviderResolutionDetail: prd}
 	}
 
-	ofReason := evalReasonToOF(evalReason)
+	rawVal := details.Value
 
 	// Try string_list first.
 	if listVal := rawVal.StringListValue(); listVal != nil {
@@ -314,12 +254,7 @@ func (p *QuonfigProvider) ObjectEvaluation(
 		for i, s := range listVal {
 			result[i] = s
 		}
-		return openfeature.InterfaceResolutionDetail{
-			Value: result,
-			ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-				Reason: ofReason,
-			},
-		}
+		return openfeature.InterfaceResolutionDetail{Value: result, ProviderResolutionDetail: prd}
 	}
 
 	// Try JSON.
@@ -327,22 +262,12 @@ func (p *QuonfigProvider) ObjectEvaluation(
 	if s != "" {
 		var jsonVal interface{}
 		if jsonErr := json.Unmarshal([]byte(s), &jsonVal); jsonErr == nil {
-			return openfeature.InterfaceResolutionDetail{
-				Value: jsonVal,
-				ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-					Reason: ofReason,
-				},
-			}
+			return openfeature.InterfaceResolutionDetail{Value: jsonVal, ProviderResolutionDetail: prd}
 		}
 	}
 
 	// Return the raw string value as a fallback.
-	return openfeature.InterfaceResolutionDetail{
-		Value: rawVal.StringValue(),
-		ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-			Reason: ofReason,
-		},
-	}
+	return openfeature.InterfaceResolutionDetail{Value: rawVal.StringValue(), ProviderResolutionDetail: prd}
 }
 
 // GetClient returns the underlying Quonfig client for native-only features
@@ -400,21 +325,11 @@ func evalReasonToOF(r quonfig.EvalReason) openfeature.Reason {
 		return openfeature.TargetingMatchReason
 	case quonfig.ReasonSplit:
 		return openfeature.SplitReason
+	case quonfig.ReasonDefault:
+		return openfeature.DefaultReason
 	default:
 		return openfeature.UnknownReason
 	}
-}
-
-// defaultOrErrorReason returns DefaultReason when the flag was simply not found,
-// and ErrorReason for all other error conditions.
-func defaultOrErrorReason(err error, found bool) openfeature.Reason {
-	if isFlagNotFound(err, found) {
-		return openfeature.DefaultReason
-	}
-	if err != nil {
-		return openfeature.ErrorReason
-	}
-	return openfeature.DefaultReason
 }
 
 func (p *QuonfigProvider) sendEvent(eventType openfeature.EventType, details openfeature.ProviderEventDetails) {

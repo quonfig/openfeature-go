@@ -1,52 +1,42 @@
 package openfeaturego
 
 import (
-	"errors"
-	"strings"
-
 	"github.com/open-feature/go-sdk/openfeature"
 	quonfig "github.com/quonfig/sdk-go"
 )
 
-// isFlagNotFound returns true if the error represents a missing flag.
-// This covers both the found=false case and explicit ErrNotFound errors.
-func isFlagNotFound(err error, found bool) bool {
-	if !found && err == nil {
-		return true
+// resolutionErrorFor maps a Quonfig EvaluationDetails to an OpenFeature
+// ResolutionError. The mapping reads the typed ErrorCode set by the SDK at the
+// actual error site -- no inference from error message text. This is a
+// deliberate change from the prior string-matching approach: any tweak to an
+// SDK error message is now decoupled from the OpenFeature error mapping.
+func resolutionErrorFor(details quonfig.EvaluationDetails) openfeature.ResolutionError {
+	msg := details.ErrorMessage
+	switch details.ErrorCode {
+	case quonfig.ErrorCodeNone:
+		return openfeature.ResolutionError{}
+	case quonfig.ErrorCodeFlagNotFound:
+		return openfeature.NewFlagNotFoundResolutionError(msg)
+	case quonfig.ErrorCodeTypeMismatch:
+		return openfeature.NewTypeMismatchResolutionError(msg)
+	case quonfig.ErrorCodeProviderNotReady:
+		return openfeature.NewProviderNotReadyResolutionError(msg)
+	default:
+		return openfeature.NewGeneralResolutionError(msg)
 	}
-	if err != nil && errors.Is(err, quonfig.ErrNotFound) {
-		return true
-	}
-	return false
 }
 
-// toResolutionError converts a native SDK error and found flag to an OpenFeature ResolutionError.
-// If err is nil and found is false, returns FLAG_NOT_FOUND.
-// If err is nil and found is true, returns a zero ResolutionError (no error).
-func toResolutionError(err error, found bool) openfeature.ResolutionError {
-	if err == nil && !found {
-		return openfeature.NewFlagNotFoundResolutionError("flag not found")
+// reasonFor maps a Quonfig EvaluationDetails to an OpenFeature Reason.
+// On error, FLAG_NOT_FOUND surfaces as DefaultReason (the spec lets providers
+// pick either DEFAULT or ERROR for missing flags; we pick DEFAULT to match the
+// existing provider contract); other error codes surface as ErrorReason.
+// On success, the reason is mapped from the SDK's EvalReason.
+func reasonFor(details quonfig.EvaluationDetails) openfeature.Reason {
+	if details.ErrorCode == quonfig.ErrorCodeFlagNotFound {
+		return openfeature.DefaultReason
 	}
-	if err == nil {
-		return openfeature.ResolutionError{}
+	if details.ErrorCode != quonfig.ErrorCodeNone {
+		return openfeature.ErrorReason
 	}
-
-	// ErrNotFound from the native SDK maps to FLAG_NOT_FOUND.
-	if errors.Is(err, quonfig.ErrNotFound) {
-		return openfeature.NewFlagNotFoundResolutionError(err.Error())
-	}
-
-	msg := strings.ToLower(err.Error())
-
-	if strings.Contains(msg, "not found") || strings.Contains(msg, "no value found") {
-		return openfeature.NewFlagNotFoundResolutionError(err.Error())
-	}
-	if strings.Contains(msg, "type") || strings.Contains(msg, "coerce") {
-		return openfeature.NewTypeMismatchResolutionError(err.Error())
-	}
-	if strings.Contains(msg, "not initialized") || strings.Contains(msg, "timed out") ||
-		strings.Contains(msg, "initialization_timeout") {
-		return openfeature.NewProviderNotReadyResolutionError(err.Error())
-	}
-	return openfeature.NewGeneralResolutionError(err.Error())
+	return evalReasonToOF(details.Reason)
 }
