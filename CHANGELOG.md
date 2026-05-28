@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.7 - 2026-05-28
+
+- Bump the `github.com/quonfig/sdk-go` pin from v0.0.25 to v0.0.26 (sdk-1.0-unification).
+
 ## 0.0.6 - 2026-05-21
 
 - Bump the `github.com/quonfig/sdk-go` pin from v0.0.23 to v0.0.25 (qfg-mie7).
