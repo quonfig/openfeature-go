@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.8 - 2026-05-30
+
+- Bump the `github.com/quonfig/sdk-go` pin from v0.0.26 to v0.0.28 and adapt to
+  its `WithAPIKey` → `WithSdkKey` rename (qfg-ujcq). No change to this
+  provider's own public API.
+
 ## 0.0.7 - 2026-05-28
 
 - Bump the `github.com/quonfig/sdk-go` pin from v0.0.25 to v0.0.26 (sdk-1.0-unification).

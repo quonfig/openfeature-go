@@ -289,7 +289,7 @@ func (p *QuonfigProvider) buildQuonfigOptions() []quonfig.Option {
 	var opts []quonfig.Option
 
 	if p.opts.SDKKey != "" {
-		opts = append(opts, quonfig.WithAPIKey(p.opts.SDKKey))
+		opts = append(opts, quonfig.WithSdkKey(p.opts.SDKKey))
 	}
 	if p.opts.DataDir != "" {
 		opts = append(opts, quonfig.WithDataDir(p.opts.DataDir))
