@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.9 - 2026-06-02
+
+- Bump the `github.com/quonfig/sdk-go` pin from v0.0.28 to v0.0.29 to inherit
+  dev-context injection default-on (qfg-bw7g.9, via qfg-bw7g.3). No change to
+  this provider's behavior — dev-context lives below the OpenFeature layer, so
+  OpenFeature users now get `quonfig-user.email` injection by default in local
+  dev (gated on the `qfg login` token file; inert in production).
+
 ## 0.0.8 - 2026-05-30
 
 - Bump the `github.com/quonfig/sdk-go` pin from v0.0.26 to v0.0.28 and adapt to
