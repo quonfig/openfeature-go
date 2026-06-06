@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0 - 2026-06-06
+
+- **Stable 1.0.0 release.** The Quonfig OpenFeature provider for Go is now declared
+  stable and tracks `github.com/quonfig/sdk-go` v1.0.0. No API or behavior changes
+  from 0.0.9 — this is a coordinated 1.0.0 version stamp across the entire Quonfig
+  SDK family.
+
 ## 0.0.9 - 2026-06-02
 
 - Bump the `github.com/quonfig/sdk-go` pin from v0.0.28 to v0.0.29 to inherit
