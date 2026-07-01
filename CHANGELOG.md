@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0 - 2026-07-01
+
+- Bump the `github.com/quonfig/sdk-go` pin from v1.0.0 to v1.1.0 to inherit the
+  secondary-delivery failover work: request hedging across primary/secondary
+  api-delivery, the reject-older generation guard, and the `gen<=0` carve-out
+  that unblocks clients talking to pre-watermark servers (qfg-7h5d). No change
+  to this provider's own public API — the failover behavior rides in via the
+  SDK bump. Coordinated 1.1.0 version stamp across the Quonfig SDK family.
+
 ## 1.0.0 - 2026-06-06
 
 - **Stable 1.0.0 release.** The Quonfig OpenFeature provider for Go is now declared
