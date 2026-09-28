@@ -77,7 +77,7 @@ provider := openfeaturego.NewQuonfigProvider(openfeaturego.Options{
 
 ## Native SDK escape hatch
 
-For features not available in OpenFeature (duration values, log levels, etc.):
+For features not available in OpenFeature (log levels, parsed `time.Duration` values, etc.):
 
 ```go
 nativeClient := provider.GetClient()
@@ -91,7 +91,7 @@ require the native SDK directly:
 
 1. **Log levels** (`shouldLog`, `logger`) -- native SDK only
 2. **`string_list` configs** must be accessed via `ObjectValue` and cast to `[]any`
-3. **`duration` configs** are not accessible via OpenFeature (use `GetClient()`)
+3. **`duration` configs** are returned as an ISO 8601 string (e.g. `"PT90S"`) via `StringValue`; use `GetClient().GetDurationValue` for a parsed `time.Duration`
 4. **`bytes` configs** are not accessible via OpenFeature
 5. **`keys()`** and raw config access -- native SDK only
 6. Context keys must use dot-notation (`"user.email"`, not nested objects)
@@ -107,5 +107,5 @@ require the native SDK directly:
 | `double` | `FloatValue` | Returns `float64` |
 | `string_list` | `ObjectValue` | Returns `[]any` |
 | `json` | `ObjectValue` | Returns parsed JSON |
-| `duration` | N/A | Use native client |
+| `duration` | `StringValue` | Returns the ISO 8601 string (e.g. `"PT90S"`); native client for `time.Duration` |
 | `log_level` | N/A | Native SDK only |
