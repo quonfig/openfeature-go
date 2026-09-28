@@ -365,3 +365,30 @@ func TestIntegration_SplitReason_WeightedValue(t *testing.T) {
 	assert.NotEqual(t, "default", detail.Value)
 	assert.Equal(t, openfeature.SplitReason, detail.Reason)
 }
+
+// TestIntegration_SplitReason_Bucket0 pins the bucket-0 SPLIT contract
+// (qfg-stbb / openfeature.yaml Case 5): targetingKey "user-123" hashes into
+// bucket 0 of of.weighted (variant-a). Bucket 0 must still report SPLIT with
+// variant "split:0" and weightedValueIndex 0 -- a `weightedValueIndex > 0`
+// reason check would mis-report it as STATIC and drop the metadata.
+func TestIntegration_SplitReason_Bucket0(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+	provider := newDataDirProvider(t)
+	bg := context.Background()
+
+	detail := provider.StringEvaluation(bg, "of.weighted", "default", openfeature.FlattenedContext{
+		"targetingKey": "user-123",
+	})
+	require.NoError(t, detail.Error())
+	assert.Equal(t, "variant-a", detail.Value)
+	assert.Equal(t, openfeature.SplitReason, detail.Reason)
+	assert.Equal(t, "split:0", detail.Variant)
+	wvi, err := detail.FlagMetadata.GetInt("weightedValueIndex")
+	require.NoError(t, err)
+	assert.Equal(t, int64(0), wvi)
+	rIdx, err := detail.FlagMetadata.GetInt("ruleIndex")
+	require.NoError(t, err)
+	assert.GreaterOrEqual(t, rIdx, int64(0))
+}
