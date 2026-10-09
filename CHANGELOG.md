@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.0 - 2026-10-09
+
+- Bump the `github.com/quonfig/sdk-go` pin from v1.4.0 to v1.6.0 to inherit the
+  SDK quality program's Wave 0/1 fixes: telemetry context deep copy (no
+  concurrent-map crash, cycle-safe, UUID and scalar arrays kept), ENV_VAR
+  errors no longer leak values, SSE header timeout plus 401/403 WARN,
+  state-callback panic recovery (qfg-goi1.2.4, qfg-goi1.2.44, qfg-goi1.2.46,
+  qfg-goi1.1.1). `WithConfigFetchTimeout` is deprecated upstream; this
+  provider does not call it. No change to this provider's behavior.
+
 ## 1.2.0 - 2026-07-08
 
 - Bump the `github.com/quonfig/sdk-go` pin from v1.1.0 to v1.2.0 to inherit its
