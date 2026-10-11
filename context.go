@@ -13,7 +13,7 @@ import (
 //   - "country"    -> namespace "",     key "country"  (no dot -> empty-string namespace)
 //   - "user.ip.address" -> namespace "user", key "ip.address" (split on first dot only)
 //   - "targetingKey" -> resolved via targetingKeyMapping (default "user.id")
-func MapContext(flatCtx map[string]any, targetingKeyMapping string) *quonfig.ContextSet {
+func mapContextRenamed(flatCtx map[string]any, targetingKeyMapping string) *quonfig.ContextSet {
 	if len(flatCtx) == 0 {
 		return nil
 	}

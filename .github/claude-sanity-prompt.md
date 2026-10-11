@@ -31,3 +31,5 @@ the review short: at most 5 findings, one or two lines each, with file:line.
 Use BLOCK only for a leaked secret, an unversioned breaking change to the
 public API, or a bug that would clearly break customers in production. Use
 WARN for anything else worth a look. Use PASS when nothing stands out.
+
+THROWAWAY-HEAD-PROMPT-MARKER: this line exists only on the PR head.
