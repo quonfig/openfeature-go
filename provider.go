@@ -53,18 +53,6 @@ type QuonfigProvider struct {
 	eventCh chan openfeature.Event
 }
 
-// NewQuonfigProvider constructs a new QuonfigProvider. Call openfeature.SetProviderAndWait
-// to register it; that will call Init() to initialize the underlying Quonfig client.
-func NewQuonfigProvider(opts Options) *QuonfigProvider {
-	if opts.TargetingKeyMapping == "" {
-		opts.TargetingKeyMapping = "user.id"
-	}
-	return &QuonfigProvider{
-		opts:    opts,
-		eventCh: make(chan openfeature.Event, 16),
-	}
-}
-
 // Metadata returns the provider metadata.
 func (p *QuonfigProvider) Metadata() openfeature.Metadata {
 	return openfeature.Metadata{Name: "quonfig"}
