@@ -1,5 +1,45 @@
 # Changelog
 
+## 1.4.0 - 2026-10-16
+
+Bump the `github.com/quonfig/sdk-go` pin from v1.6.0 to v1.7.0. This
+provider's own API is unchanged, but sdk-go 1.7.0 changes evaluation and
+connection behavior that OpenFeature users see through `ObjectValue`,
+`BooleanValue`, `StringValue` and friends. Read the upgrade notes before you
+roll it out.
+
+### Upgrade notes
+
+- **Some targeting rules match different users (qfg-goi1.5.2).** A context
+  version of `"2"` or `"2.0"` (common for mobile app versions) now compares as
+  `2.0.0` in semver rules instead of failing every one. A numeric context
+  value of 1e6 or more (for example a JSON-decoded id in an
+  `openfeature.EvaluationContext`) now matches an `is one of ["1234567"]`
+  list, and a list holding an exponent string (`"1.234567e+06"`) stops
+  matching. Pass dates to `PROP_BEFORE`/`PROP_AFTER` rules as epoch
+  milliseconds or ISO 8601 / RFC 3339 with `Z` or a numeric offset;
+  date-only and offset-less strings never match.
+- **Some users move to a different weighted variant once (qfg-goi1.9).** When
+  a rollout hashes on a numeric property whose value is a whole-number float
+  of 1e6 or more, the hash input is now plain digits (`1234567`), matching
+  sdk-node and sdk-ruby. Those users are re-bucketed once on upgrade (the
+  OpenFeature reason stays `SPLIT`). Integer-typed values and values below
+  1e6 are unaffected.
+- **A rejected SDK key backs off (qfg-goi1.10.23).** When fetches get 401,
+  403, 404 or 410, the underlying client stops SSE and polling and probes
+  once every 150-300s instead, logging one ERROR (status and host, never the
+  key). Evaluations keep serving the last good config; the first valid
+  response resumes normal streaming. The provider emits no extra OpenFeature
+  event for this.
+
+### Also inherited
+
+- Non-confidential ENV_VAR-provided values now report their resolved value in
+  evaluation-summary telemetry; `confidential: true` values stay redacted
+  (qfg-goi1.10.16).
+- The fallback poller re-engages after a recovered panic instead of staying
+  silent for the rest of an SSE outage (qfg-goi1.10.14).
+
 ## 1.3.0 - 2026-10-09
 
 - Bump the `github.com/quonfig/sdk-go` pin from v1.4.0 to v1.6.0 to inherit the
