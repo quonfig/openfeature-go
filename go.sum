@@ -2,8 +2,8 @@ github.com/fsnotify/fsnotify v1.10.1 h1:b0/UzAf9yR5rhf3RPm9gf3ehBPpf0oZKIjtpKrx5
 github.com/fsnotify/fsnotify v1.10.1/go.mod h1:TLheqan6HD6GBK6PrDWyDPBaEV8LspOxvPSjC+bVfgo=
 github.com/open-feature/go-sdk v1.19.0 h1:vahRSX/kYzLny7bUuxssNiiHOGqHlDIG47z+jJ/DCEY=
 github.com/open-feature/go-sdk v1.19.0/go.mod h1:JlS8ClrWUzfywMOOeFo0Ro3BeT8cS5O/KbZUOOjwtyQ=
-github.com/quonfig/sdk-go v1.7.0 h1:R5Y5Gla5xnDJ2DcFCtc9MMHB/M0h/6aozrCRD+ysvgI=
-github.com/quonfig/sdk-go v1.7.0/go.mod h1:u7b1KXQ3CfnlgJxPO6QkId5xQwN5fHgVYdUK0tACTZU=
+github.com/quonfig/sdk-go v1.8.0 h1:E2xyxBNs/eeRQzWgZI1pdbHTmDKLD4RqC1ljNpStYVs=
+github.com/quonfig/sdk-go v1.8.0/go.mod h1:u7b1KXQ3CfnlgJxPO6QkId5xQwN5fHgVYdUK0tACTZU=
 github.com/spaolacci/murmur3 v1.1.0 h1:7c1g84S4BPRrfL5Xrdp6fOJ206sU9y293DDHaoy0bLI=
 github.com/spaolacci/murmur3 v1.1.0/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWDWE=

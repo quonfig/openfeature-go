@@ -1,5 +1,39 @@
 # Changelog
 
+## 1.5.0 - 2026-10-20
+
+Bump the `github.com/quonfig/sdk-go` pin from v1.7.0 to v1.8.0. This
+provider's own API and OpenFeature events are unchanged. sdk-go 1.8.0 changes
+when the underlying client counts its SSE stream as connected, and fixes a
+deadlock in the config-update callback.
+
+### Upgrade notes
+
+- **The stream counts as connected at its first frame (qfg-goi1.10.9,
+  qfg-goi1.10.39).** If you read connection state from the underlying client
+  (`provider.GetClient().ConnectionState()`, `FallbackPollerActive()`, or a
+  `quonfig.WithSSEStateCallback` passed in `AdditionalOptions`), the client now
+  reports `connected` only after the stream delivers its first config envelope
+  or keepalive, not when the 200 response headers arrive. Against Quonfig's
+  servers these arrive together, so you should see no difference. Behind a
+  proxy that sends headers early, `connected` can come up to one keepalive
+  interval (30 s) later. A stream that closes before any frame now counts as a
+  failed attempt: reconnects back off and the fallback poller takes over,
+  where before the client could reconnect in a tight loop and keep stale
+  config. `PROVIDER_READY` timing is unchanged; it still follows the initial
+  config load.
+
+### Fixed (inherited)
+
+- **The config-update callback no longer deadlocks when it calls the client
+  (qfg-eefx).** sdk-go ran `OnConfigUpdate` while holding its install lock, so
+  a callback that called `Refresh()` blocked forever and could stop SSE and
+  polling from starting. The callback now runs after the lock is released.
+  This affects you only if you pass your own `quonfig.WithOnConfigUpdate` in
+  `AdditionalOptions`; the provider's built-in callback never calls back into
+  the client. `PROVIDER_CONFIGURATION_CHANGED` events are still emitted once
+  per config install, in order.
+
 ## 1.4.0 - 2026-10-16
 
 Bump the `github.com/quonfig/sdk-go` pin from v1.6.0 to v1.7.0. This
