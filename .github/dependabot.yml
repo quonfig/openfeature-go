@@ -33,3 +33,17 @@ updates:
         update-types:
           - minor
           - patch
+        # open-feature/go-sdk is kept out of the group on purpose. Its v1.19.0
+        # requires go 1.26.0, and a grouped bump (PR #6) raised our own `go`
+        # directive with it, forcing every consumer onto Go 1.26 (fixed in
+        # v1.5.1). Dependabot cannot filter on a dependency's Go version, so
+        # go-sdk bumps arrive as standalone PRs where the go.mod diff is easy
+        # to review. CI also builds with Go 1.25 + GOTOOLCHAIN=local.
+        exclude-patterns:
+          - "github.com/open-feature/go-sdk"
+    ignore:
+      # Major bumps of runtime deps change public API; take them by hand.
+      - dependency-name: "github.com/open-feature/go-sdk"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "github.com/quonfig/sdk-go"
+        update-types: ["version-update:semver-major"]

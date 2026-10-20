@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.5.1 - 2026-10-20
+
+Restore Go 1.25 support. v1.4.0 and v1.5.0 required Go 1.26 by accident: a
+grouped Dependabot bump moved `github.com/open-feature/go-sdk` from v1.17.2 to
+v1.19.0, and go-sdk v1.19.0 declares `go 1.26.0`, which raised this module's
+`go` directive to match. This release pins go-sdk to v1.18.0, the newest
+release that supports Go 1.25, and sets the `go` directive back to 1.25.0.
+The provider's API and behavior are unchanged; it used nothing that go-sdk
+v1.19.0 added.
+
+### Fixed
+
+- **The module builds on Go 1.25 again.** The `go` directive is back to
+  1.25.0 (go-sdk v1.18.0's own minimum). If you upgraded to Go 1.26 only for
+  this provider, you can stay there; nothing else changes.
+
+### Internal
+
+- CI now also builds and tests with Go 1.25 and `GOTOOLCHAIN=local`, so a
+  dependency that raises the minimum Go version fails the PR.
+- Dependabot no longer folds `github.com/open-feature/go-sdk` into the grouped
+  minor/patch PR. Its bumps arrive as their own PRs so a `go` directive change
+  is visible in review.
+
 ## 1.5.0 - 2026-10-20
 
 Bump the `github.com/quonfig/sdk-go` pin from v1.7.0 to v1.8.0. This
