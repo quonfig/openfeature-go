@@ -1,5 +1,32 @@
 # Changelog
 
+## Unreleased
+
+Bump the `github.com/quonfig/sdk-go` pin from v1.8.0 to v1.9.0 and map its
+startup-failure policy to OpenFeature provider status (qfg-9p4i.12).
+
+### Changed
+
+- **`Init` now waits for the first config and can fail.** sdk-go 1.9.0's
+  `NewClient` blocks until the first config arrives and, under the default
+  `onInitFailure=fail`, returns `*quonfig.InitError` after `initTimeout`
+  (10s) or at once when every delivery leg rejects the SDK key. `Init` returns
+  that error, so `SetProviderAndWait` returns it and the provider status is
+  `ERROR`. Before, `Init` always succeeded and the provider reported `READY`
+  while delivery was down. sdk-go returns no client under `fail`, so the
+  provider does not retry on its own; register it again or restart.
+
+### Added
+
+- `onInitFailure=continue` (`quonfig.WithOnInitFailure(quonfig.InitFailureContinue)`
+  in `AdditionalOptions`): when the client starts without config, `Init`
+  returns `nil` and the provider then emits `PROVIDER_ERROR` (status `ERROR`,
+  evaluations return the default with `PROVIDER_NOT_READY`). When the client
+  heals, the provider emits `PROVIDER_READY` instead of
+  `PROVIDER_CONFIGURATION_CHANGED`.
+- `onInitFailure=wait` keeps the status `NOT_READY` until the first config.
+- README "Startup failure" section with the mode-to-status table.
+
 ## 1.5.1 - 2026-10-20
 
 Restore Go 1.25 support. v1.4.0 and v1.5.0 required Go 1.26 by accident: a

@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/json"
 	"sync"
+	"time"
 
 	"github.com/open-feature/go-sdk/openfeature"
 	quonfig "github.com/quonfig/sdk-go"
@@ -46,12 +47,21 @@ type Options struct {
 // QuonfigProvider implements the OpenFeature FeatureProvider and StateHandler interfaces.
 // It wraps the github.com/quonfig/sdk-go native client.
 type QuonfigProvider struct {
-	opts    Options
-	client  *quonfig.Client
-	mu      sync.RWMutex
-	ready   bool // set to true after Init() completes successfully
-	eventCh chan openfeature.Event
+	opts   Options
+	client *quonfig.Client
+	mu     sync.RWMutex
+	ready  bool // set to true after Init() completes successfully
+	// awaitingConfig is true while a client returned by Init (onInitFailure=continue)
+	// has no config yet. The status is ERROR until it heals.
+	awaitingConfig bool
+	eventCh        chan openfeature.Event
 }
+
+// notReadyEventDelay is how long Init waits before emitting PROVIDER_ERROR for a
+// client that started without config. The OpenFeature Go SDK sets the status
+// from Init's return value (READY) after Init returns, so an event sent from
+// inside Init could be applied first and then overwritten by that READY.
+var notReadyEventDelay = 50 * time.Millisecond
 
 // NewQuonfigProvider constructs a new QuonfigProvider. Call openfeature.SetProviderAndWait
 // to register it; that will call Init() to initialize the underlying Quonfig client.
@@ -84,6 +94,18 @@ func (p *QuonfigProvider) EventChannel() <-chan openfeature.Event {
 // Init initializes the underlying Quonfig client. Called by the OpenFeature SDK
 // when the provider is registered via SetProvider / SetProviderAndWait.
 // Implements openfeature.StateHandler.
+//
+// Init follows the client's onInitFailure policy (set it, and initTimeout, with
+// quonfig.WithOnInitFailure / quonfig.WithInitTimeout in AdditionalOptions):
+//
+//   - fail (the default): Init returns the *quonfig.InitError and the provider
+//     status is ERROR. sdk-go returns no client under fail, so nothing retries;
+//     register the provider again or restart to retry.
+//   - wait: Init blocks until the first config arrives, so the status stays
+//     NOT_READY and evaluations return the default with PROVIDER_NOT_READY.
+//   - continue: Init returns nil. If the client has no config yet, the provider
+//     emits PROVIDER_ERROR (status ERROR; evaluations return the default with
+//     PROVIDER_NOT_READY) and then PROVIDER_READY once the client heals.
 func (p *QuonfigProvider) Init(_ openfeature.EvaluationContext) error {
 	quonfigOpts := p.buildQuonfigOptions()
 
@@ -98,18 +120,43 @@ func (p *QuonfigProvider) Init(_ openfeature.EvaluationContext) error {
 	p.mu.Lock()
 	p.client = client
 	p.ready = true
+	// Checked under p.mu: a heal that lands before this point has already
+	// flipped Ready(); one that lands after sees awaitingConfig in the
+	// OnConfigUpdate callback, which also takes p.mu.
+	p.awaitingConfig = !client.Ready()
+	awaiting := p.awaitingConfig
 	p.mu.Unlock()
 
+	if awaiting {
+		go p.reportNotReady()
+		return nil
+	}
 	p.sendEvent(openfeature.ProviderReady, openfeature.ProviderEventDetails{})
 	return nil
+}
+
+// reportNotReady emits PROVIDER_ERROR for a client that started without config
+// (onInitFailure=continue), unless it healed in the meantime.
+func (p *QuonfigProvider) reportNotReady() {
+	time.Sleep(notReadyEventDelay)
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if !p.awaitingConfig {
+		return
+	}
+	p.sendEvent(openfeature.ProviderError, openfeature.ProviderEventDetails{
+		Message:   "quonfig: no config yet (onInitFailure=continue); serving code defaults and retrying in the background",
+		ErrorCode: openfeature.ProviderNotReadyCode,
+	})
 }
 
 // Shutdown closes the underlying Quonfig client.
 // Implements openfeature.StateHandler.
 func (p *QuonfigProvider) Shutdown() {
-	p.mu.RLock()
+	p.mu.Lock()
 	client := p.client
-	p.mu.RUnlock()
+	p.awaitingConfig = false
+	p.mu.Unlock()
 	if client != nil {
 		client.Close()
 	}
@@ -300,16 +347,25 @@ func (p *QuonfigProvider) buildQuonfigOptions() []quonfig.Option {
 
 	// Wire config change notifications -> OpenFeature PROVIDER_CONFIGURATION_CHANGED event.
 	// Only emit after the provider is ready to avoid sending a spurious config-change
-	// event during the initial load (before Init() has completed).
+	// event during the initial load (before Init() has completed). The first config
+	// for a client that started without one (onInitFailure=continue) is a heal and
+	// emits PROVIDER_READY instead.
 	opts = append(opts, quonfig.WithOnConfigUpdate(func() {
-		p.mu.RLock()
-		ready := p.ready
-		p.mu.RUnlock()
-		if ready {
-			p.sendEvent(openfeature.ProviderConfigChange, openfeature.ProviderEventDetails{
-				FlagChanges: []string{},
-			})
+		p.mu.Lock()
+		defer p.mu.Unlock()
+		if !p.ready {
+			return
 		}
+		if p.awaitingConfig {
+			p.awaitingConfig = false
+			p.sendEvent(openfeature.ProviderReady, openfeature.ProviderEventDetails{
+				Message: "quonfig: config loaded; serving live config",
+			})
+			return
+		}
+		p.sendEvent(openfeature.ProviderConfigChange, openfeature.ProviderEventDetails{
+			FlagChanges: []string{},
+		})
 	}))
 
 	opts = append(opts, p.opts.AdditionalOptions...)

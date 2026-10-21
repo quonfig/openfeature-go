@@ -42,6 +42,32 @@ evalCtx := openfeature.NewEvaluationContext("user-123", map[string]any{
 plan, err := client.StringValue(ctx, "billing.plan", "free", evalCtx)
 ```
 
+## Startup failure
+
+`Init` (run by `SetProviderAndWait`) waits for the first config, up to the
+client's `initTimeout` (default 10s). What happens when delivery is down or
+the SDK key is rejected follows the client's `onInitFailure` policy. Set both
+through `AdditionalOptions`:
+
+```go
+provider := openfeaturego.NewQuonfigProvider(openfeaturego.Options{
+    SDKKey: "qf_sk_production_...",
+    AdditionalOptions: []quonfig.Option{
+        quonfig.WithOnInitFailure(quonfig.InitFailureContinue), // default: InitFailureFail
+        quonfig.WithInitTimeout(5 * time.Second),
+    },
+})
+```
+
+| `onInitFailure` | `Init` | Provider status | When config arrives |
+|---|---|---|---|
+| `InitFailureFail` (default) | Returns `*quonfig.InitError` (`Reason`: `timeout`, `unavailable`, `unauthorized`) | `ERROR` | No client exists, so nothing retries. Register the provider again or restart. |
+| `InitFailureWait` | Blocks until the first config | `NOT_READY`; evaluations return the default with `PROVIDER_NOT_READY` | `Init` returns; `READY` |
+| `InitFailureContinue` | Returns `nil`, then emits `PROVIDER_ERROR` | `ERROR`; evaluations return the default with `PROVIDER_NOT_READY` | The client keeps retrying; the provider emits `PROVIDER_READY` |
+
+`ERROR` is not fatal in OpenFeature: evaluations still run and return your
+code defaults.
+
 ## Context mapping
 
 OpenFeature uses a flat key-value evaluation context. Quonfig uses a nested
