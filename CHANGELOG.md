@@ -1,9 +1,28 @@
 # Changelog
 
-## Unreleased
+## 1.6.0 - 2026-10-23
 
-Bump the `github.com/quonfig/sdk-go` pin from v1.8.0 to v1.9.0 and map its
-startup-failure policy to OpenFeature provider status (qfg-9p4i.12).
+Requires sdk-go 1.10.0 (size caps, `callback_errors_total`). This release bumps
+the `github.com/quonfig/sdk-go` pin from v1.8.0 through v1.9.0 to v1.10.0 and
+maps sdk-go's startup-failure policy to OpenFeature provider status
+(qfg-9p4i.12). The `go` directive stays at 1.25.0.
+
+### Upgrade notes
+
+- **UPGRADE: `Init` can now fail, so `SetProviderAndWait` can return an error
+  and leave the provider in `ERROR` when delivery is down at startup.** This
+  follows sdk-go 1.9.0, whose `NewClient` now blocks for the first config and
+  fails by default. It ships as a minor under Jeff's Go semver override
+  (project/plans/2026-10-05-init-failure-design.md, Decision 3, which also
+  covers the openfeature-go pin bump; see sdk-go 1.9.0). Pass
+  `quonfig.WithOnInitFailure(quonfig.InitFailureContinue)` to keep booting
+  without config.
+- From sdk-go 1.10.0: config responses over 16 MiB and SSE events over 4 MiB
+  are rejected as failed fetches/stream attempts (qfg-6vno.20.7), and a
+  recovered panic in a user callback counts in the internal
+  `quonfig_sdk_callback_errors_total` counter instead of as a worker restart
+  (qfg-6vno.26). Real workspaces are far below the caps. The provider's API is
+  unchanged.
 
 ### Changed
 
