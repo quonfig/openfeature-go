@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	openfeaturego "github.com/quonfig/openfeature-go"
-	quonfig "github.com/quonfig/sdk-go"
+	openfeaturego "github.com/quonfig/openfeature-go/v2"
+	quonfig "github.com/quonfig/sdk-go/v2"
 )
 
 // Startup-failure mapping (qfg-9p4i.12, design doc B.5):

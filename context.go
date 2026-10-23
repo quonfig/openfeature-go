@@ -3,7 +3,7 @@ package openfeaturego
 import (
 	"strings"
 
-	quonfig "github.com/quonfig/sdk-go"
+	quonfig "github.com/quonfig/sdk-go/v2"
 )
 
 // MapContext converts an OpenFeature flat FlattenedContext to a Quonfig ContextSet.

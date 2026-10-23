@@ -1,10 +1,10 @@
-module github.com/quonfig/openfeature-go
+module github.com/quonfig/openfeature-go/v2
 
 go 1.25.0
 
 require (
 	github.com/open-feature/go-sdk v1.18.0
-	github.com/quonfig/sdk-go v1.10.0
+	github.com/quonfig/sdk-go/v2 v2.0.0
 	github.com/stretchr/testify v1.12.1
 )
 
