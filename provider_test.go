@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	openfeaturego "github.com/quonfig/openfeature-go"
-	quonfig "github.com/quonfig/sdk-go"
+	quonfig "github.com/quonfig/sdk-go/v2"
 )
 
 // integrationTestDataDir returns the absolute path to the integration-test-data fixtures.

@@ -2,7 +2,7 @@ package openfeaturego
 
 import (
 	"github.com/open-feature/go-sdk/openfeature"
-	quonfig "github.com/quonfig/sdk-go"
+	quonfig "github.com/quonfig/sdk-go/v2"
 )
 
 // resolutionErrorFor maps a Quonfig EvaluationDetails to an OpenFeature

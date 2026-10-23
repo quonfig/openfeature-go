@@ -1,7 +1,7 @@
 # github.com/quonfig/openfeature-go
 
 OpenFeature provider for [Quonfig](https://quonfig.com) — wraps the
-[github.com/quonfig/sdk-go](https://github.com/quonfig/sdk-go) native SDK.
+[github.com/quonfig/sdk-go/v2](https://github.com/quonfig/sdk-go) native SDK.
 
 ## Installation
 
@@ -135,3 +135,9 @@ require the native SDK directly:
 | `json` | `ObjectValue` | Returns parsed JSON |
 | `duration` | `StringValue` | Returns the ISO 8601 string (e.g. `"PT90S"`); native client for `time.Duration` |
 | `log_level` | N/A | Native SDK only |
+
+Reading a config with the method for another type returns your default with a
+`TYPE_MISMATCH` error; values are never coerced (a string `"false"` is not a
+bool). The only conversions are `int` -> `FloatValue`, and a whole `double`
+within +/-(2^53-1) -> `IntValue` (`3.9` is a type mismatch, never truncated).
+A stored number that does not parse returns your default with `PARSE_ERROR`.

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	openfeaturego "github.com/quonfig/openfeature-go"
-	quonfig "github.com/quonfig/sdk-go"
+	quonfig "github.com/quonfig/sdk-go/v2"
 )
 
 // TestDetailsForward_StaticVariantAndMetadata verifies that the provider

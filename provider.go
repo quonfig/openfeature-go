@@ -14,12 +14,11 @@ package openfeaturego
 
 import (
 	"context"
-	"encoding/json"
 	"sync"
 	"time"
 
 	"github.com/open-feature/go-sdk/openfeature"
-	quonfig "github.com/quonfig/sdk-go"
+	quonfig "github.com/quonfig/sdk-go/v2"
 )
 
 // Options configures the QuonfigProvider.
@@ -207,7 +206,11 @@ func (p *QuonfigProvider) BooleanEvaluation(
 	if details.ErrorCode != quonfig.ErrorCodeNone || details.Value == nil {
 		return openfeature.BoolResolutionDetail{Value: defaultValue, ProviderResolutionDetail: prd}
 	}
-	return openfeature.BoolResolutionDetail{Value: details.Value.BoolValue(), ProviderResolutionDetail: prd}
+	v, typeErr := boolOf(flag, details.Value)
+	if typeErr != nil {
+		return openfeature.BoolResolutionDetail{Value: defaultValue, ProviderResolutionDetail: typedFailure(details, *typeErr)}
+	}
+	return openfeature.BoolResolutionDetail{Value: v, ProviderResolutionDetail: prd}
 }
 
 // StringEvaluation resolves a string flag.
@@ -228,7 +231,11 @@ func (p *QuonfigProvider) StringEvaluation(
 	if details.ErrorCode != quonfig.ErrorCodeNone || details.Value == nil {
 		return openfeature.StringResolutionDetail{Value: defaultValue, ProviderResolutionDetail: prd}
 	}
-	return openfeature.StringResolutionDetail{Value: details.Value.StringValue(), ProviderResolutionDetail: prd}
+	v, typeErr := stringOf(flag, details.Value)
+	if typeErr != nil {
+		return openfeature.StringResolutionDetail{Value: defaultValue, ProviderResolutionDetail: typedFailure(details, *typeErr)}
+	}
+	return openfeature.StringResolutionDetail{Value: v, ProviderResolutionDetail: prd}
 }
 
 // FloatEvaluation resolves a float64 flag.
@@ -249,7 +256,11 @@ func (p *QuonfigProvider) FloatEvaluation(
 	if details.ErrorCode != quonfig.ErrorCodeNone || details.Value == nil {
 		return openfeature.FloatResolutionDetail{Value: defaultValue, ProviderResolutionDetail: prd}
 	}
-	return openfeature.FloatResolutionDetail{Value: details.Value.DoubleValue(), ProviderResolutionDetail: prd}
+	v, typeErr := floatOf(flag, details.Value)
+	if typeErr != nil {
+		return openfeature.FloatResolutionDetail{Value: defaultValue, ProviderResolutionDetail: typedFailure(details, *typeErr)}
+	}
+	return openfeature.FloatResolutionDetail{Value: v, ProviderResolutionDetail: prd}
 }
 
 // IntEvaluation resolves an int64 flag.
@@ -270,11 +281,14 @@ func (p *QuonfigProvider) IntEvaluation(
 	if details.ErrorCode != quonfig.ErrorCodeNone || details.Value == nil {
 		return openfeature.IntResolutionDetail{Value: defaultValue, ProviderResolutionDetail: prd}
 	}
-	return openfeature.IntResolutionDetail{Value: details.Value.IntValue(), ProviderResolutionDetail: prd}
+	v, typeErr := intOf(flag, details.Value)
+	if typeErr != nil {
+		return openfeature.IntResolutionDetail{Value: defaultValue, ProviderResolutionDetail: typedFailure(details, *typeErr)}
+	}
+	return openfeature.IntResolutionDetail{Value: v, ProviderResolutionDetail: prd}
 }
 
-// ObjectEvaluation resolves an object (string_list or JSON) flag.
-// It tries string_list first, then JSON.
+// ObjectEvaluation resolves a string_list (as []any) or json flag.
 func (p *QuonfigProvider) ObjectEvaluation(
 	_ context.Context,
 	flag string,
@@ -293,28 +307,11 @@ func (p *QuonfigProvider) ObjectEvaluation(
 		return openfeature.InterfaceResolutionDetail{Value: defaultValue, ProviderResolutionDetail: prd}
 	}
 
-	rawVal := details.Value
-
-	// Try string_list first.
-	if listVal := rawVal.StringListValue(); listVal != nil {
-		result := make([]any, len(listVal))
-		for i, s := range listVal {
-			result[i] = s
-		}
-		return openfeature.InterfaceResolutionDetail{Value: result, ProviderResolutionDetail: prd}
+	v, typeErr := objectOf(flag, details.Value)
+	if typeErr != nil {
+		return openfeature.InterfaceResolutionDetail{Value: defaultValue, ProviderResolutionDetail: typedFailure(details, *typeErr)}
 	}
-
-	// Try JSON.
-	s := rawVal.StringValue()
-	if s != "" {
-		var jsonVal interface{}
-		if jsonErr := json.Unmarshal([]byte(s), &jsonVal); jsonErr == nil {
-			return openfeature.InterfaceResolutionDetail{Value: jsonVal, ProviderResolutionDetail: prd}
-		}
-	}
-
-	// Return the raw string value as a fallback.
-	return openfeature.InterfaceResolutionDetail{Value: rawVal.StringValue(), ProviderResolutionDetail: prd}
+	return openfeature.InterfaceResolutionDetail{Value: v, ProviderResolutionDetail: prd}
 }
 
 // GetClient returns the underlying Quonfig client for native-only features

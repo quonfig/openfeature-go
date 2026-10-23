@@ -1,5 +1,30 @@
 # Changelog
 
+## 2.0.0 - unreleased
+
+Requires sdk-go v2.0.0 (`github.com/quonfig/sdk-go/v2`): the cross-SDK
+typed-getter contract (qfg-zvyy).
+
+### Upgrade notes
+
+- **UPGRADE: a flag read with the method for another type now returns your
+  default with `TYPE_MISMATCH`.** 1.x coerced it instead: `BooleanValue` on a
+  string config returned `false`, `IntValue` on `3.9` returned `3`,
+  `StringValue` on an int returned its text, and `ObjectValue` on a string
+  returned the string. Strings are never coerced now (a stored `"false"` is
+  not a bool). The only conversions are `int` -> `FloatValue` and a whole
+  `double` within +/-(2^53-1) -> `IntValue`. `StringValue` still reads a
+  `duration` as its ISO 8601 string.
+- A stored int or double that does not parse returns your default with
+  `PARSE_ERROR` (1.x: the key was missing, `FLAG_NOT_FOUND`).
+- If you use `GetClient()`, sdk-go v2 moves to `github.com/quonfig/sdk-go/v2`;
+  see its CHANGELOG "UPGRADE to v2".
+
+### Fixed
+
+- `ObjectValue` on a `json` config returns the native JSON value. 1.x
+  stringified the decoded map with `%v` and returned that string.
+
 ## 1.6.0 - 2026-10-23
 
 Requires sdk-go 1.10.0 (size caps, `callback_errors_total`). This release bumps
