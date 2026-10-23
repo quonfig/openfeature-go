@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	openfeaturego "github.com/quonfig/openfeature-go"
+	openfeaturego "github.com/quonfig/openfeature-go/v2"
 	quonfig "github.com/quonfig/sdk-go/v2"
 )
 

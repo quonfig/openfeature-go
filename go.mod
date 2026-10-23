@@ -1,4 +1,4 @@
-module github.com/quonfig/openfeature-go
+module github.com/quonfig/openfeature-go/v2
 
 go 1.25.0
 

@@ -1,4 +1,4 @@
-# github.com/quonfig/openfeature-go
+# github.com/quonfig/openfeature-go/v2
 
 OpenFeature provider for [Quonfig](https://quonfig.com) — wraps the
 [github.com/quonfig/sdk-go/v2](https://github.com/quonfig/sdk-go) native SDK.
@@ -6,7 +6,7 @@ OpenFeature provider for [Quonfig](https://quonfig.com) — wraps the
 ## Installation
 
 ```bash
-go get github.com/quonfig/openfeature-go
+go get github.com/quonfig/openfeature-go/v2
 go get github.com/open-feature/go-sdk
 ```
 
@@ -14,7 +14,7 @@ go get github.com/open-feature/go-sdk
 
 ```go
 import (
-    openfeaturego "github.com/quonfig/openfeature-go"
+    openfeaturego "github.com/quonfig/openfeature-go/v2"
     "github.com/open-feature/go-sdk/openfeature"
 )
 

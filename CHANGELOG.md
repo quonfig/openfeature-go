@@ -1,12 +1,15 @@
 # Changelog
 
-## 2.0.0 - unreleased
+## 2.0.0 - 2026-10-23
 
 Requires sdk-go v2.0.0 (`github.com/quonfig/sdk-go/v2`): the cross-SDK
 typed-getter contract (qfg-zvyy).
 
 ### Upgrade notes
 
+- **UPGRADE: the module path is now `github.com/quonfig/openfeature-go/v2`.**
+  Run `go get github.com/quonfig/openfeature-go/v2` and change your import;
+  the package name is still `openfeaturego`.
 - **UPGRADE: a flag read with the method for another type now returns your
   default with `TYPE_MISMATCH`.** 1.x coerced it instead: `BooleanValue` on a
   string config returned `false`, `IntValue` on `3.9` returned `3`,
