@@ -101,3 +101,54 @@ func TestTypedContract_DurationReadsAsISOString(t *testing.T) {
 	assert.NoError(t, d.Error())
 	assert.Equal(t, "PT30S", d.Value)
 }
+
+// qfg-9xsl: a value of the requested type that cannot be parsed is the
+// caller's default with reason ERROR and code PARSE_ERROR; a wrong-type read
+// is TYPE_MISMATCH (integration-test-data openfeature.yaml Cases 2 and 6).
+
+func assertParseError(t *testing.T, err error, reason openfeature.Reason) {
+	t.Helper()
+	assert.ErrorContains(t, err, string(openfeature.ParseErrorCode))
+	assert.Equal(t, openfeature.ErrorReason, reason)
+}
+
+func TestTypedContract_MalformedStoredDoubleIsParseError(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+	p := newDataDirProvider(t)
+	d := p.FloatEvaluation(context.Background(), "getter.contract.double.malformed", 1.5, nil)
+	assert.Equal(t, 1.5, d.Value)
+	assertParseError(t, d.Error(), d.Reason)
+}
+
+func TestTypedContract_EnvVarProvidedMalformedIntIsParseError(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+	t.Setenv("QUONFIG_ITD_GETTER_INT", "twelve")
+	p := newDataDirProvider(t)
+	d := p.IntEvaluation(context.Background(), "getter.contract.provided.int.malformed", 7, nil)
+	assert.Equal(t, int64(7), d.Value)
+	assertParseError(t, d.Error(), d.Reason)
+}
+
+func TestTypedContract_IntReadAsBooleanIsTypeMismatch(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+	p := newDataDirProvider(t)
+	b := p.BooleanEvaluation(context.Background(), "getter.contract.int", false, nil)
+	assert.False(t, b.Value)
+	assertTypeMismatch(t, b.Error(), b.Reason)
+}
+
+func TestTypedContract_MalformedDurationIsParseError(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+	p := newDataDirProvider(t)
+	d := p.StringEvaluation(context.Background(), "test.duration.malformed.30s", "PT0S", nil)
+	assert.Equal(t, "PT0S", d.Value)
+	assertParseError(t, d.Error(), d.Reason)
+}

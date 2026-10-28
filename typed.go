@@ -13,7 +13,7 @@ import (
 // (qfg-zvyy) itself: a value of another type is TYPE_MISMATCH and the
 // caller's default, never a coerced value. Strings are never coerced; the
 // only conversions are int -> float and a whole float within +/-(2^53-1)
-// -> int. A stored number that did not parse is PARSE_ERROR.
+// -> int. A stored number or duration that did not parse is PARSE_ERROR.
 
 const maxSafeInt = 1<<53 - 1
 
@@ -43,7 +43,8 @@ func boolOf(flag string, v *quonfig.Value) (bool, *openfeature.ResolutionError) 
 }
 
 // stringOf also reads a duration config as its ISO 8601 string: OpenFeature
-// has no duration type, so StringValue is the documented way to read one.
+// has no duration type, so StringValue is the documented way to read one. A
+// stored duration that is not valid ISO 8601 (e.g. "30s") is PARSE_ERROR.
 func stringOf(flag string, v *quonfig.Value) (string, *openfeature.ResolutionError) {
 	switch v.Type {
 	case quonfig.ValueTypeString, quonfig.ValueTypeLogLevel, quonfig.ValueTypeDuration:
@@ -52,6 +53,12 @@ func stringOf(flag string, v *quonfig.Value) (string, *openfeature.ResolutionErr
 		return "", &err
 	}
 	if s, ok := v.Value.(string); ok {
+		if v.Type == quonfig.ValueTypeDuration {
+			if _, parseErr := quonfig.ParseISO8601Duration(s); parseErr != nil {
+				err := malformed(flag, quonfig.ValueTypeDuration)
+				return "", &err
+			}
+		}
 		return s, nil
 	}
 	err := mismatch(flag, v, quonfig.ValueTypeString)
