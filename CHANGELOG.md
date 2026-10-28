@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.1.0 - 2026-10-28
+
+Malformed values are `PARSE_ERROR`, wrong-type reads stay `TYPE_MISMATCH`
+(qfg-9xsl; integration-test-data `openfeature.yaml` Cases 2 and 6).
+
+### Changed
+
+- An int/double/bool config provided by an `ENV_VAR` whose value does not
+  parse (e.g. `QUONFIG_ITD_GETTER_INT=twelve` for an int) now returns your
+  default with reason `ERROR` and `PARSE_ERROR`. 2.0.0 reported
+  `TYPE_MISMATCH`.
+
+### Fixed
+
+- `StringValue` on a `duration` config whose stored value is not valid ISO
+  8601 (e.g. `"30s"`) returns your default with reason `ERROR` and
+  `PARSE_ERROR`. 2.0.0 returned the raw string `"30s"` with reason `STATIC`.
+
 ## 2.0.0 - 2026-10-23
 
 Requires sdk-go v2.0.0 (`github.com/quonfig/sdk-go/v2`): the cross-SDK

@@ -109,12 +109,14 @@ func TestErrorMapping_TypedErrorCodeIgnoresMessageText(t *testing.T) {
 			wantCode: openfeature.FlagNotFoundCode,
 		},
 		{
-			name: "TypeMismatch with message that has no 'type' or 'coerce' substring",
+			// From the untyped EvaluateDetails, sdk-go's TYPE_MISMATCH is only
+			// an ENV_VAR value that failed to coerce: PARSE_ERROR (qfg-9xsl).
+			name: "TypeMismatch (env-var coercion) with message that has no 'parse' substring",
 			details: quonfig.EvaluationDetails{
 				ErrorCode:    quonfig.ErrorCodeTypeMismatch,
 				ErrorMessage: "🦄 unable to make number out of cheese",
 			},
-			wantCode: openfeature.TypeMismatchCode,
+			wantCode: openfeature.ParseErrorCode,
 		},
 		{
 			name: "ProviderNotReady with arbitrary message",

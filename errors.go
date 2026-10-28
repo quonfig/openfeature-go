@@ -18,7 +18,13 @@ func resolutionErrorFor(details quonfig.EvaluationDetails) openfeature.Resolutio
 	case quonfig.ErrorCodeFlagNotFound:
 		return openfeature.NewFlagNotFoundResolutionError(msg)
 	case quonfig.ErrorCodeTypeMismatch:
-		return openfeature.NewTypeMismatchResolutionError(msg)
+		// The provider resolves through the untyped EvaluateDetails, where
+		// sdk-go raises TYPE_MISMATCH only for ErrUnableToCoerce: an ENV_VAR-
+		// provided value (e.g. "twelve" for an int config) that does not parse
+		// as the config's own type. That is malformed data, not a caller
+		// reading the wrong type, so it is PARSE_ERROR (qfg-9xsl). Wrong-type
+		// reads are detected by the provider itself (typed.go mismatch).
+		return openfeature.NewParseErrorResolutionError(msg)
 	case quonfig.ErrorCodeProviderNotReady:
 		return openfeature.NewProviderNotReadyResolutionError(msg)
 	default:
