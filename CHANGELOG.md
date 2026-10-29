@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.2.0 - 2026-10-29
+
+Forward-compatible `PARSE_ERROR` passthrough (qfg-wg1n). Still requires sdk-go
+v2.0.0 or later; nothing changes with the sdk-go releases available today.
+
+### Added
+
+- When sdk-go reports `PARSE_ERROR` itself (newer sdk-go releases do for a
+  malformed `ENV_VAR` value or a malformed stored int/double/duration), the
+  provider now returns your default with reason `ERROR` and OpenFeature
+  `PARSE_ERROR`. 2.1.0 mapped that unknown code to `GENERAL`. Error path only:
+  a well-formed value resolves exactly as before.
+
+### Unchanged
+
+- With sdk-go v2.0.0, which never reports `PARSE_ERROR`, a sdk-go
+  `TYPE_MISMATCH` on the untyped path still maps to `PARSE_ERROR`, as in 2.1.0.
+  The sdk-go floor is not raised.
+
 ## 2.1.0 - 2026-10-28
 
 Malformed values are `PARSE_ERROR`, wrong-type reads stay `TYPE_MISMATCH`

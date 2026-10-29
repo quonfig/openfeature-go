@@ -166,3 +166,21 @@ func TestErrorMapping_OtherErrorReason(t *testing.T) {
 	})
 	assert.Equal(t, openfeature.ErrorReason, r)
 }
+
+// TestErrorMapping_SDKParseErrorPassesThrough pins the forward-compatible
+// passthrough (qfg-wg1n): a newer sdk-go reports malformed data (a bad ENV_VAR
+// value, a malformed stored int/double/duration) as its own "PARSE_ERROR"
+// code. The provider must surface that as OpenFeature PARSE_ERROR, not fall
+// through to GENERAL. The released sdk-go v2.0.0 has no ErrorCodeParseError
+// constant, so the stub uses the wire string value.
+func TestErrorMapping_SDKParseErrorPassesThrough(t *testing.T) {
+	details := quonfig.EvaluationDetails{
+		ErrorCode:    quonfig.ErrorCode("PARSE_ERROR"),
+		ErrorMessage: "🦄 the stored int is a sandwich",
+	}
+
+	resErr := openfeaturego.ResolutionErrorFor(details)
+	assert.Contains(t, resErr.Error(), string(openfeature.ParseErrorCode))
+	assert.NotContains(t, resErr.Error(), string(openfeature.GeneralCode))
+	assert.Equal(t, openfeature.ErrorReason, openfeaturego.ReasonFor(details))
+}
