@@ -5,6 +5,12 @@ import (
 	quonfig "github.com/quonfig/sdk-go/v2"
 )
 
+// sdkErrorCodeParseError is the SDK's PARSE_ERROR code, matched by its string
+// value (qfg-wg1n). Newer sdk-go releases report malformed data with it; the
+// sdk-go v2.0.0 this module requires has no exported constant for it, so the
+// provider does not depend on one and keeps building against that floor.
+const sdkErrorCodeParseError quonfig.ErrorCode = "PARSE_ERROR"
+
 // resolutionErrorFor maps a Quonfig EvaluationDetails to an OpenFeature
 // ResolutionError. The mapping reads the typed ErrorCode set by the SDK at the
 // actual error site -- no inference from error message text. This is a
@@ -24,6 +30,10 @@ func resolutionErrorFor(details quonfig.EvaluationDetails) openfeature.Resolutio
 		// as the config's own type. That is malformed data, not a caller
 		// reading the wrong type, so it is PARSE_ERROR (qfg-9xsl). Wrong-type
 		// reads are detected by the provider itself (typed.go mismatch).
+		return openfeature.NewParseErrorResolutionError(msg)
+	case sdkErrorCodeParseError:
+		// A newer sdk-go names malformed data PARSE_ERROR itself: pass it
+		// straight through.
 		return openfeature.NewParseErrorResolutionError(msg)
 	case quonfig.ErrorCodeProviderNotReady:
 		return openfeature.NewProviderNotReadyResolutionError(msg)
