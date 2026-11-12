@@ -109,12 +109,21 @@ func TestErrorMapping_TypedErrorCodeIgnoresMessageText(t *testing.T) {
 			wantCode: openfeature.FlagNotFoundCode,
 		},
 		{
-			// From the untyped EvaluateDetails, sdk-go's TYPE_MISMATCH is only
-			// an ENV_VAR value that failed to coerce: PARSE_ERROR (qfg-9xsl).
-			name: "TypeMismatch (env-var coercion) with message that has no 'parse' substring",
+			// A genuine sdk-go TYPE_MISMATCH stays TYPE_MISMATCH: since sdk-go
+			// v2.1.0 malformed data is reported as PARSE_ERROR instead, so the
+			// provider no longer rewrites TYPE_MISMATCH (qfg-ln7d).
+			name: "TypeMismatch with message that mentions parsing",
 			details: quonfig.EvaluationDetails{
 				ErrorCode:    quonfig.ErrorCodeTypeMismatch,
-				ErrorMessage: "🦄 unable to make number out of cheese",
+				ErrorMessage: "🦄 unable to parse number out of cheese",
+			},
+			wantCode: openfeature.TypeMismatchCode,
+		},
+		{
+			name: "ParseError with message that has no 'parse' substring",
+			details: quonfig.EvaluationDetails{
+				ErrorCode:    quonfig.ErrorCodeParseError,
+				ErrorMessage: "🦄 the unicorn sat on the number",
 			},
 			wantCode: openfeature.ParseErrorCode,
 		},
@@ -168,14 +177,12 @@ func TestErrorMapping_OtherErrorReason(t *testing.T) {
 }
 
 // TestErrorMapping_SDKParseErrorPassesThrough pins the forward-compatible
-// passthrough (qfg-wg1n): a newer sdk-go reports malformed data (a bad ENV_VAR
-// value, a malformed stored int/double/duration) as its own "PARSE_ERROR"
-// code. The provider must surface that as OpenFeature PARSE_ERROR, not fall
-// through to GENERAL. The released sdk-go v2.0.0 has no ErrorCodeParseError
-// constant, so the stub uses the wire string value.
+// passthrough (qfg-wg1n): sdk-go v2.1.0+ reports malformed data (a bad ENV_VAR
+// value) as ErrorCodeParseError. The provider must surface that as OpenFeature
+// PARSE_ERROR, not fall through to GENERAL.
 func TestErrorMapping_SDKParseErrorPassesThrough(t *testing.T) {
 	details := quonfig.EvaluationDetails{
-		ErrorCode:    quonfig.ErrorCode("PARSE_ERROR"),
+		ErrorCode:    quonfig.ErrorCodeParseError,
 		ErrorMessage: "🦄 the stored int is a sandwich",
 	}
 
