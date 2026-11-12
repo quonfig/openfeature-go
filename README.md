@@ -97,7 +97,7 @@ Use `DataDir` instead of `SDKKey` to load config from a local directory:
 ```go
 provider := openfeaturego.NewQuonfigProvider(openfeaturego.Options{
     DataDir:     "/path/to/workspace",
-    Environment: "Production",
+    Environment: "production",
 })
 ```
 
