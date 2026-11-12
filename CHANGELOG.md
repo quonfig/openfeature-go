@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.3.0 - 2026-11-12
+
+Requires sdk-go v2.1.0 or later (qfg-ln7d). Minor because the sdk-go floor
+moved.
+
+### Changed
+
+- The sdk-go requirement rises from v2.0.0 to v2.1.0, the first release whose
+  `EvaluateDetails` reports malformed data (an `ENV_VAR` value that does not
+  parse as the config's type) as its own `PARSE_ERROR`. The provider maps that
+  code straight to OpenFeature `PARSE_ERROR`.
+- Removed the 2.1.0/2.2.0 workaround that rewrote every sdk-go
+  `TYPE_MISMATCH` on the untyped path to `PARSE_ERROR`. A sdk-go
+  `TYPE_MISMATCH` now surfaces as OpenFeature `TYPE_MISMATCH`. Malformed
+  values still return your default with reason `ERROR` and `PARSE_ERROR`, now
+  reported by the SDK; wrong-type reads are still `TYPE_MISMATCH`.
+
 ## 2.2.0 - 2026-10-29
 
 Forward-compatible `PARSE_ERROR` passthrough (qfg-wg1n). Still requires sdk-go
